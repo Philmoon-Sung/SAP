@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prompt Generator for SUNO AI (Unified Interface)</title>
+    <style>
+        /* CSS v1.3.1 - UI Layout Fix Added (Existing styles remain unchanged) */
+        :root { --base-font-size: 13px; --ui-scale-factor: 0.7; --label-width: 140px; --button-padding-y: 5px; --button-padding-x: 10px; --gap-size: 10px; --container-padding: calc(20px * var(--ui-scale-factor)); --section-margin-bottom: calc(var(--gap-size) * 1.8); } html { scroll-behavior: smooth; height: 100%; overflow: hidden; } body { background-image: url('input_file_0.png'); background-size: cover; background-repeat: no-repeat; background-position: center center; background-attachment: fixed; background-color: #1a1a2e; color: #e0e0e0; font-family: sans-serif; font-size: var(--base-font-size); margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100%; overflow: hidden; } .container { background-color: rgba(42, 42, 62, 0.95); border-radius: calc(10px * var(--ui-scale-factor)); padding: var(--container-padding); width: 95%; max-width: 1400px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); border: 1px solid rgba(74, 74, 94, 0.7); display: flex; flex-direction: column; height: calc(100vh - 40px); max-height: 95vh; overflow: hidden; } .sticky-header-controls { background-color: rgba(42, 42, 62, 0.98); z-index: 10; border-bottom: 1px solid rgba(74, 74, 94, 0.7); padding: calc(var(--container-padding)*0.8); padding-bottom: var(--gap-size); flex-shrink: 0; } .header { margin-bottom: var(--gap-size); padding-bottom: 0; border-bottom: none; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: calc(10px * var(--ui-scale-factor)); } .header h1 { margin: 0 10px; font-size: calc(1.8em * var(--ui-scale-factor) * 1.44); color: #ffffff; text-align: center; flex-grow: 1; text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5); order: 1; width: 100%; margin-bottom: 5px; @media (min-width: 900px) { width: auto; order: 0; margin-bottom: 0;} } .header-buttons-left, .header-buttons-right { display: flex; gap: calc(var(--gap-size)*0.8); } .header-buttons-left { order: 0; @media (min-width: 900px) { order: 1; } } .header-buttons-right { order: 2; justify-content: flex-end; } .header-buttons-left button, .header-buttons-right button, .action-button, .preset-button { padding: var(--button-padding-y) var(--button-padding-x); font-size: calc(0.9em * var(--ui-scale-factor) * 1.32); border-radius: calc(5px * var(--ui-scale-factor)); background-color: rgba(74, 74, 94, 0.8); color: #e0e0e0; border: none; cursor: pointer; transition: background-color 0.3s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.3); white-space: nowrap; } .header-buttons-left button:hover, .header-buttons-right button:hover, .action-button:hover, .preset-button:hover { background-color: rgba(106, 106, 126, 0.9); } .preset-controls { display: flex; align-items: center; gap: var(--gap-size); padding: calc(10px * var(--ui-scale-factor)) 0; background-color: transparent; border: none; border-radius: 0; margin-bottom: 0; flex-wrap: wrap; } .preset-controls span, .preset-controls label { font-weight: bold; color: #bbb; white-space: nowrap; font-size: calc(1em * var(--ui-scale-factor) * 1.32); margin: 0 5px 0 0;} .preset-controls input[type="text"], .preset-controls select { padding: var(--button-padding-y) calc(var(--button-padding-x) * 0.8); font-size: calc(0.9em * var(--ui-scale-factor) * 1.32); background-color: rgba(42, 42, 62, 0.9); color: #e0e0e0; border: 1px solid rgba(90, 90, 110, 0.8); border-radius: calc(5px * var(--ui-scale-factor)); flex-grow: 1; min-width: 150px; box-sizing: border-box; } .main-content { display: flex; gap: calc(var(--gap-size) * 1.5); flex-grow: 1; margin-top: var(--gap-size); overflow: hidden; min-height: 0; } /* Ensure options column can scroll if content overflows its flex space */ .options-column { flex: 6; min-width: 550px; /* Reduced min-width slightly */ padding-right: calc(var(--gap-size)*0.5); overflow-y: auto; height: 100%; /* Take full height of flex container */ min-height: 0; /* Necessary for scrolling in flex items */ } /* === UI LAYOUT FIX START === */ /* Results column takes remaining space and allows children to flex */ .results-column { flex: 4; min-width: 350px; /* Reduced min-width slightly */ display: flex; flex-direction: column; height: 100%; /* Take full height of flex container */ overflow: hidden; /* Prevent results column itself from scrolling */ min-height: 0; gap: var(--section-margin-bottom); } /* Each output section tries to take 50% height */ .prompt-output-section { /* Removed flex-grow: 1 */ display: flex; flex-direction: column; height: 50%; /* Each takes half the column height */ min-height: 100px; /* Minimum reasonable height */ overflow: hidden; /* Prevent this section from growing beyond 50% */ background-color: rgba(28, 28, 42, 0.7); border: 1px solid rgba(74, 74, 94, 0.6); border-radius: calc(8px * var(--ui-scale-factor)); padding: calc(15px * var(--ui-scale-factor)); box-sizing: border-box; /* Include padding in height calculation */ } /* The actual text display area grows and scrolls within its 50% section */ .generated-prompt-display { /* Keep previous styles, ensure it can grow and scroll */ background-color: rgba(28, 28, 42, 0.9); border: 1px solid rgba(74, 74, 94, 0.7); border-radius: calc(8px * var(--ui-scale-factor)); padding: calc(18px * var(--ui-scale-factor)); font-family: 'Courier New', Courier, monospace; box-shadow: inset 0 1px 5px rgba(0,0,0,0.5); color: #f0f0f0; line-height: 1.7; font-size: calc(1.05em * var(--ui-scale-factor) * 1.32); flex-grow: 1; /* Takes available space within parent .prompt-output-section */ overflow-y: auto; /* Crucial for scrolling */ white-space: pre-wrap; word-wrap: break-word; min-height: 50px; /* Minimum height before scrolling starts */ box-sizing: border-box; margin-bottom: var(--gap-size); } /* Ensure footer buttons stay at the bottom */
+        .prompt-output-section .footer-buttons {
+            display: flex;
+            justify-content: flex-end;
+            flex-shrink: 0; /* Prevent shrinking */
+            margin-top: auto; /* Pushes buttons to bottom if space available, but scrolling handled by display */
+            gap: 8px; /* Added gap between buttons */
+        }
+        /* === UI LAYOUT FIX END === */
+        .prompt-builder-section { margin-bottom: var(--section-margin-bottom); }
+        .prompt-builder-section h2 { font-size: calc(1.3em * var(--ui-scale-factor) * 1.4); color: #aabfff; border-bottom: 1px solid rgba(74, 74, 94, 0.7); padding-bottom: calc(var(--gap-size)*0.5); margin-bottom: var(--gap-size); margin-top: 0; }
+        .prompt-section { display: flex; gap: var(--gap-size); align-items: flex-start; margin-bottom: calc(var(--gap-size) * 1.1); }
+        .prompt-section label.section-label { background-color: rgba(106, 106, 126, 0.85); padding: calc(10px * var(--ui-scale-factor)) calc(15px * var(--ui-scale-factor)); border-radius: calc(5px * var(--ui-scale-factor)); font-weight: bold; width: var(--label-width); text-align: center; flex-shrink: 0; box-shadow: 0 2px 4px rgba(0,0,0,0.3); margin-top: calc(5px * var(--ui-scale-factor)); color: #ffffff; font-size: calc(0.95em * var(--ui-scale-factor) * 1.32); line-height: 1.4; height: fit-content; }
+        .input-container, .options-container { background-color: rgba(58, 58, 78, 0.8); border: 1px solid rgba(74, 74, 94, 0.7); border-radius: calc(8px * var(--ui-scale-factor)); padding: calc(15px * var(--ui-scale-factor)); flex-grow: 1; display: flex; flex-wrap: wrap; gap: calc(var(--gap-size) * 0.8); box-shadow: inset 0 1px 3px rgba(0,0,0,0.4); align-items: center; width: calc(100% - var(--label-width) - var(--gap-size)); min-height: 30px; box-sizing: border-box; }
+        .input-container.textarea-container, .options-container.textarea-container { padding: calc(10px * var(--ui-scale-factor)); align-items: stretch; }
+        .input-container.vertical-stack, .options-container.vertical-stack { flex-direction: column; align-items: stretch; gap: calc(var(--gap-size) * 1.2); }
+        .input-container.multi-level { flex-direction: column; align-items: stretch; }
+        textarea.text-input-field, input[type="text"].text-input-field, input[type="number"].text-input-field { width: 100%; box-sizing: border-box; padding: var(--button-padding-y) calc(var(--button-padding-x) * 0.8); font-size: calc(0.95em * var(--ui-scale-factor) * 1.32); background-color: rgba(42, 42, 62, 0.9); color: #e0e0e0; border: 1px solid rgba(90, 90, 110, 0.8); border-radius: calc(5px * var(--ui-scale-factor)); resize: vertical; font-family: inherit; line-height: 1.5; }
+        textarea.text-input-field { min-height: 60px; }
+        textarea.text-input-field::placeholder, input[type="text"].text-input-field::placeholder, input[type="number"].text-input-field::placeholder { color: #aaa; }
+        .options-group { display: flex; flex-wrap: wrap; gap: calc(var(--gap-size) * 0.8); width: 100%; }
+        .input-container button:not(.action-button), .options-container button:not(.action-button), .sequence-elements button { padding: var(--button-padding-y) var(--button-padding-x); font-size: calc(0.9em * var(--ui-scale-factor) * 1.32); border-radius: calc(5px * var(--ui-scale-factor)); background-color: rgba(74, 74, 94, 0.8); color: #e0e0e0; border: 1px solid rgba(90, 90, 110, 0.8); cursor: pointer; transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.3); white-space: nowrap; }
+        .input-container button:not(.action-button):hover, .options-container button:not(.action-button):hover, .sequence-elements button:hover { background-color: rgba(90, 90, 110, 0.9); border-color: rgba(122, 122, 142, 0.9); }
+        .input-container button.selected, .options-container button.selected { background-color: #8a8aff; color: #1a1a2e; font-weight: bold; border-color: #aabfff; }
+        .options-container.rounded-buttons button { border-radius: calc(20px * var(--ui-scale-factor) * 1.5); }
+        #style-time-signature-options button { border-radius: calc(20px * var(--ui-scale-factor)); min-width: 60px; text-align: center; padding: var(--button-padding-y) calc(var(--button-padding-x) * 1.2); }
+        #unified-mood-section-content .options-group { padding-bottom: var(--gap-size); border-bottom: 1px dashed rgba(74, 74, 94, 0.5); margin-bottom: var(--gap-size); }
+        #unified-mood-section-content textarea { margin-top: 5px; }
+        .subsection-label { font-size: calc(0.85em * var(--ui-scale-factor) * 1.32); color: #bbb; margin-bottom: calc(var(--gap-size)*0.5); display: block; width: 100%; font-weight: bold; }
+        #style-tempo-control-container { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--gap-size); width: 100%; }
+        #style-tempo-buttons-group { display: flex; flex-wrap: wrap; gap: calc(var(--gap-size) * 0.8); flex-grow: 1; }
+        #style-bpm-input-container { display: flex; align-items: center; gap: 5px; flex-shrink: 0; }
+        #style-bpm-input { width: 70px; text-align: center; }
+        #style-bpm-input-container label { width: auto; padding: 0; margin: 0; background: none; box-shadow: none; font-weight: normal; color: #bbb; font-size: calc(1em * var(--ui-scale-factor) * 1.32); }
+        .sequence-builder-content { display: flex; flex-direction: column; gap: var(--gap-size); flex-grow: 1; width: 100%; }
+        .sequence-elements { display: flex; flex-wrap: wrap; gap: calc(var(--gap-size) * 0.7); padding-bottom: var(--gap-size); border-bottom: 1px dashed rgba(74, 74, 94, 0.5); }
+        .selected-sequence-container { background-color: rgba(42, 42, 62, 0.7); border-radius: calc(5px * var(--ui-scale-factor)); padding: calc(10px * var(--ui-scale-factor)); min-height: calc(35px * var(--ui-scale-factor)); display: flex; flex-wrap: wrap; gap: calc(var(--gap-size) * 0.6); align-items: center; margin-bottom: var(--gap-size); box-sizing: border-box; }
+        .sequence-tag { padding: calc(var(--button-padding-y)*0.8) calc(var(--button-padding-x)*0.8); border-radius: calc(15px * var(--ui-scale-factor)); font-size: calc(0.8em * var(--ui-scale-factor)*1.32); font-weight: bold; display: inline-flex; align-items: center; margin-right: 5px; }
+        .songform-tag { background-color: #8a8aff; color: #1a1a2e; }
+        .placeholder-text { color: #aaa; font-style: italic; font-size: calc(0.9em * var(--ui-scale-factor)*1.32); width: 100%; text-align: center; margin: 5px 0; }
+        .helper-text { font-size: calc(0.8em * var(--ui-scale-factor) * 1.2); color: #a0a0c0; margin-top: 5px; width: 100%; text-align: left; padding-left: 0; }
+        .prompt-output-section .output-label { margin-bottom: calc(var(--gap-size)*0.8); width: 100%; background: none; box-shadow: none; text-align: left; margin-top: 0; padding: 0; color: #bbb; font-weight: bold; font-size: calc(1.1em * var(--ui-scale-factor) * 1.32); }
+        /* Scrollbar Styles */
+        .options-column::-webkit-scrollbar, .results-column::-webkit-scrollbar, .generated-prompt-display::-webkit-scrollbar { width: 8px; }
+        .options-column::-webkit-scrollbar-track, .results-column::-webkit-scrollbar-track, .generated-prompt-display::-webkit-scrollbar-track { background: rgba(42, 42, 62, 0.8); border-radius: 4px; }
+        .options-column::-webkit-scrollbar-thumb, .results-column::-webkit-scrollbar-thumb, .generated-prompt-display::-webkit-scrollbar-thumb { background-color: rgba(106, 106, 126, 0.8); border-radius: 4px; border: 1px solid rgba(42, 42, 62, 0.9); }
+        .options-column::-webkit-scrollbar-thumb:hover, .results-column::-webkit-scrollbar-thumb:hover, .generated-prompt-display::-webkit-scrollbar-thumb:hover { background-color: rgba(122, 122, 142, 0.9); }
+        .options-column, .results-column, .generated-prompt-display { scrollbar-width: thin; scrollbar-color: rgba(106, 106, 126, 0.8) rgba(42, 42, 62, 0.8); }
+        /* --- Responsive Adjustments --- */
+        @media (max-width: 1024px) { .container { height: calc(100vh - 20px); max-height: 98vh; } .main-content { flex-direction: column; overflow-y: auto; } .options-column { flex: none; width: 100%; height: auto; max-height: 65vh; overflow-y: auto; padding-right: 0; box-sizing: border-box; margin-bottom: var(--gap-size); min-width: auto; } .results-column { flex: none; width: 100%; height: auto; overflow: visible; gap: var(--gap-size); max-height: none; } .prompt-output-section { height: auto; min-height: 150px; flex-grow: 0; } .generated-prompt-display { flex-grow: 0; max-height: 300px; overflow-y: auto; } }
+        @media (max-width: 768px) { .container { padding: calc(var(--container-padding) * 0.8); height: calc(100vh - 10px); max-height: 99vh; } .sticky-header-controls { padding: calc(var(--container-padding)*0.5); } .header h1 { font-size: calc(1.5em * var(--ui-scale-factor) * 1.44); } .preset-controls { flex-direction: column; align-items: stretch; gap: calc(var(--gap-size)*0.5); } .preset-controls input[type="text"], .preset-controls select { width: 100%; margin-left: 0; margin-top: 5px; } .prompt-section { flex-direction: column; align-items: stretch; gap: calc(var(--gap-size)*0.5); } .prompt-section label.section-label { width: 100%; text-align: left; margin-top: 0; margin-bottom: 5px; background-color: transparent; box-shadow: none; padding: 5px 0; color: #bbb; font-weight: bold; font-size: calc(1em * var(--ui-scale-factor) * 1.32); } .input-container, .options-container { width: 100%; padding: calc(10px * var(--ui-scale-factor)); } .options-column { max-height: none; } .results-column { min-height: auto; } .prompt-output-section { min-height: 120px; } .generated-prompt-display { min-height: 100px; max-height: 200px; } .helper-text { padding-left: 5px; } .input-container.vertical-stack { padding: calc(10px * var(--ui-scale-factor));} }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="sticky-header-controls">
+        <div class="header">
+            <div class="header-buttons-left"> <button id="undo-button" title="Undo last action">Undo</button> <button id="reset-button" title="Reset all selections">Reset</button> </div>
+            <h1>Prompt Generator for SUNO AI</h1>
+            <div class="header-buttons-right"> <button id="home-button" title="Go to main page">Home</button> </div>
+        </div>
+        <div class="preset-controls">
+            <button id="save-preset-button" class="preset-button">Save Preset As...</button>
+            <input type="text" id="preset-name-input" placeholder="Preset File Name (e.g., My Ballad)">
+            <button id="load-preset-file-button" class="preset-button">Load Preset from File...</button>
+            <input type="file" id="load-preset-file-input" accept=".json" style="display: none;">
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="options-column">
+            <div class="prompt-builder-section" data-group="core-vibe">
+                <h2>Core Idea & Vibe</h2>
+                <div class="prompt-section"> <label class="section-label" for="lyrics-main-theme-group">Theme<br>(주제)</label> <div id="lyrics-main-theme-group" class="input-container options-group" data-section-ref="lyrics"></div> </div>
+                <div class="prompt-section"> <label class="section-label" for="unified-mood-section-content">Mood / Vibe<br>(분위기/감성)</label> <div id="unified-mood-section-content" class="input-container vertical-stack" data-section-ref="unified"> <span class="subsection-label">Select Mood/Vibe Terms (Optional):</span> <div id="unified-mood-options" class="options-group rounded-buttons"></div> <span class="subsection-label">Describe Mood/Emotion in Detail (Optional):</span> <textarea id="unified-mood-input" class="text-input-field" placeholder="노래의 전반적인 느낌이나 감정을 자유롭게 서술 (예: 봄비처럼 포근하고 아련한 그리움)"></textarea> </div> </div>
+            </div>
+
+            <div class="prompt-builder-section" data-group="lyrical-details">
+                <h2>Lyrical Content & Structure</h2>
+                <div class="prompt-section"> <label class="section-label" for="lyrics-story-persona-input">Story / Situation<br>(이야기/상황)</label> <div class="input-container textarea-container" data-section-ref="lyrics"> <textarea id="lyrics-story-persona-input" class="text-input-field" placeholder="주인공(화자), 상황, 배경 스토리 구체적으로 작성 (혼잣말/대화 구분 포함) (예: 창밖 비를 보며 헤어진 연인을 회상하는 20대 후반 남자, 혼잣말)"></textarea> </div> </div>
+                <div class="prompt-section"> <label class="section-label" for="lyrics-imagery-input">Imagery / Keywords<br>(이미지/키워드)</label> <div class="input-container textarea-container" data-section-ref="lyrics"> <textarea id="lyrics-imagery-input" class="text-input-field" placeholder="포함할 장면, 사물, 단어, 감각 표현 등 쉼표(,)로 구분 입력 (예: 투명 우산, 젖은 아스팔트 냄새, 차창에 흐르는 빗물)"></textarea> </div> </div>
+                <div class="prompt-section"> <label class="section-label" for="lyrics-message-input">Target / Message<br>(대상/메시지)</label> <div class="input-container textarea-container" data-section-ref="lyrics"> <textarea id="lyrics-message-input" class="text-input-field" placeholder="전달하고 싶은 핵심 메시지나 듣는 이에게 남길 감정, 노래 대상(있다면) 서술 (예: 지나간 사랑도 아름다운 추억이 될 수 있다)"></textarea> </div> </div>
+                <div class="prompt-section"> <label class="section-label" for="lyrics-tone-options">Linguistic Tone<br>(언어적 톤)</label> <div id="lyrics-tone-options" class="input-container options-group" data-section-ref="lyrics"></div> </div>
+                <div class="prompt-section"> <label class="section-label" for="lyrics-songform-section-content">Song Form<br>(송폼 구성)</label> <div id="lyrics-songform-section-content" class="input-container sequence-builder-content" data-section-ref="lyrics"> <div id="lyrics-songform-elements" class="sequence-elements"></div> <div id="lyrics-selected-songform-container" class="selected-sequence-container"> <span class="placeholder-text">Click elements above to build form...</span></div> </div> </div>
+            </div>
+
+            <div class="prompt-builder-section" data-group="musical-foundation">
+                <h2>Musical Foundation</h2>
+                <div class="prompt-section"> <label class="section-label" for="style-genre-options">Genre<br>(장르)</label> <div id="style-genre-options" class="options-container rounded-buttons options-group" data-section-ref="style"></div> </div>
+                <div class="prompt-section"> <label class="section-label" for="style-time-signature-options">Time Sig<br>(박자)</label> <div id="style-time-signature-options" class="options-container options-group" data-section-ref="style"></div> </div>
+                <div class="prompt-section"> <label class="section-label" for="style-tempo-options-container">Tempo / Energy<br>(템포)</label> <div id="style-tempo-options-container" class="options-container multi-level" data-section-ref="style"> <div id="style-tempo-control-container"> <div id="style-tempo-buttons-group" class="options-group rounded-buttons"></div> <div id="style-bpm-input-container"> <label for="style-bpm-input">BPM:</label> <input type="number" id="style-bpm-input" class="text-input-field" min="30" max="300" placeholder="e.g. 120"> </div> </div> </div> </div>
+                <div class="prompt-section">
+                    <label class="section-label" for="style-era-sound-container">Era / Sound<br>(시대/특징)</label>
+                    <div id="style-era-sound-container" class="options-container vertical-stack" data-section-ref="style">
+                        <div> <span class="subsection-label">Select Era:</span> <div id="style-era-options-era" class="options-group rounded-buttons"></div> </div>
+                        <div> <span class="subsection-label">Select Sound Features:</span> <div id="style-era-options-features" class="options-group rounded-buttons"></div> </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="prompt-builder-section" data-group="instrumentation-sound">
+                <h2>Instrumentation & Sound</h2>
+                <div class="prompt-section"> <label class="section-label" for="style-instrument-options">Instrument<br>(악기)</label> <div id="style-instrument-options" class="options-container rounded-buttons options-group" data-section-ref="style"></div> </div>
+            </div>
+
+            <div class="prompt-builder-section" data-group="vocal-characteristics">
+                <h2>Vocal Definition</h2>
+                <div class="prompt-section"> <label class="section-label" for="style-vocal-options">Vocal Style<br>(보컬)</label> <div id="style-vocal-options" class="options-container rounded-buttons options-group" data-section-ref="style"></div> </div>
+                <div class="prompt-section"> <label class="section-label" for="style-vocal-age-options">Vocal Age<br>(보컬 연령)</label> <div id="style-vocal-age-options" class="options-container rounded-buttons options-group" data-section-ref="style"></div> </div>
+                <div class="prompt-section"> <label class="section-label" for="style-tone-options">Vocal Tone<br>(보컬 톤)</label> <div id="style-tone-options" class="options-container rounded-buttons options-group" data-section-ref="style"></div> </div>
+            </div>
+
+            <div class="prompt-builder-section" data-group="influences-exclusions">
+                <h2>Influences & Exclusions</h2>
+                <div class="prompt-section"> <label class="section-label" for="style-artist-input">Artist Style<br>(아티스트)</label> <div class="options-container textarea-container" data-section-ref="style"> <input type="text" id="style-artist-input" class="text-input-field" placeholder="e.g., Michael Jackson..."> </div> </div>
+                <div class="prompt-section"> <label class="section-label" for="style-negative-prompts-input">Exclude<br>(제외)</label> <div class="options-container textarea-container" data-section-ref="style" style="flex-direction: column; align-items: flex-start;"> <input type="text" id="style-negative-prompts-input" class="text-input-field" placeholder="e.g., drums, saxophone..."> <span class="helper-text">쉼표(,)로 구분하여 제외...</span> </div> </div>
+            </div>
+        </div> <div class="results-column">
+             <div class="prompt-output-section">
+                 <label class="output-label" for="lyrics-prompt-output">Generated Lyrics Prompt (SUNO Format)</label>
+                 <div id="lyrics-prompt-output" class="generated-prompt-display">Select options...</div>
+                 <div class="footer-buttons">
+                     <button id="save-lyrics-button" class="action-button" title="Save lyrics prompt as .txt file">Save Lyrics</button>
+                     <button id="copy-lyrics-button" class="action-button">Copy Lyrics Prompt</button>
+                 </div>
+             </div>
+             <div class="prompt-output-section">
+                 <label class="output-label" for="style-prompt-output">Generated Music Style Prompt</label>
+                 <div id="style-prompt-output" class="generated-prompt-display">Select options...</div>
+                 <div class="footer-buttons">
+                     <button id="save-style-button" class="action-button" title="Save style prompt as .txt file">Save Style</button>
+                     <button id="copy-style-button" class="action-button">Copy Style Prompt</button>
+                 </div>
+             </div>
+        </div> </div> </div>
+<script>
+    // --- INTEGRATED JAVASCRIPT (v1.4.0 - Unified UI & Enhanced Prompt Logic with user modifications) ---
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log("DOM Loaded. Initializing Integrated Prompt Generator (v1.4.0 - Unified UI with user modifications)...");
+
+        const lyricsData = {
+            themes: { "사랑": [], "일상": [], "꿈": [], "사회": [], "자연": [], "감사": [], "행복": [], "가족": [], "광고": [], "찬양": [] },
+            tones: [ "Pleading (애원하는)", "Objective (객관적)", "Confessional (고백하는)", "Observational / Calm (관조적/담담함)", "Earnest (간절한)", "Cynical / Sarcastic (냉소적/반어적)", "Firm (단호한)", "Plain (담백함)", "Witty (위트있는)", "Comforting (위로하는)", "Humorous (유머러스)", "Passionate (열정적)", "Sincere (진솔함)", "Direct / Blunt (직설적)", "Poetic (시적)", "Lyrical (서정적)", "Declarative (선언적인)", "Storytelling (스토리텔링)", "Warm (따뜻한)", "Richly Appealing (호소력 짙은)" ],
+            songFormElements: ['[Intro]', '[Verse]', '[Pre-Chorus]', '[Chorus]', '[Verse 2]', '[Chorus 2]', '[Bridge]', '[Rap Verse]', '[Outro]', '[Interlude]', '[Hook]']
+        };
+        const styleData = {
+             genres: [ "Acoustic (어쿠스틱)", "Alternative Rock (얼터너티브 록)", "Ambient (앰비언트)", "Blues (블루스)", "Bossa Nova (보사노바)", "Chillwave (칠웨이브)", "Cinematic (시네마틱)", "Classical (클래식)", "Country (컨트리)", "Dance Pop (댄스 팝)", "Disco (디스코)", "Dream Pop (드림 팝)", "Drum and Bass (드럼 앤 베이스)", "Dubstep (덥스텝)", "EDM (이디엠)", "Electronic (일렉트로닉)", "Folk (포크)", "Funk (펑크)", "Gospel (가스펠)", "Hard Rock (하드 록)", "HipHop (힙합)", "House (하우스)", "Indie Folk (인디 포크)", "Indie Pop (인디 팝)", "Indie Rock (인디 록)", "Jazz (재즈)", "J-Pop (제이팝)", "K-Indie (케이 인디)", "K-Pop (케이팝)", "K-Pop Ballad (케이팝 발라드)", "Korean Ballad (한국 발라드)", "Korean Trot (한국 트로트)", "Latin (라틴)", "Lo-fi (로파이)", "Metal (메탈)", "Orchestral (오케스트라)", "Pop (팝)", "Pop Rock (팝 록)", "Progressive Rock (프로그레시브 록)", "Punk Rock (펑크 록)", "R&B", "Reggae (레게)", "Rock (록)", "Shoegaze (슈게이징)", "Soul (소울)", "Synth-Pop (신스팝)", "Synthwave (신스웨이브)", "Techno (테크노)", "Trance (트랜스)", "Trap (트랩)", "World Music (월드 뮤직)", "Worldbeat (월드비트)" ],
+             timeSignatures: [ "4/4", "3/4", "6/8", "2/2", "Free Time (자유 박자)" ],
+             instruments: [ "808 Drums (808 드럼)", "Acoustic Guitar (어쿠스틱 기타)", "Bass Guitar (베이스 기타)", "Brass (브라스 (금관악기))", "Cello (첼로)", "Drums (드럼)", "Drum Machine (드럼머신)", "Electric Guitar (일렉트릭 기타)", "Flute (플루트)", "Harp (하프)", "Organ (오르간)", "Percussion (퍼커션)", "Piano (피아노)", "Saxophone (색소폰)", "Strings (스트링 (현악기))", "Synthesizer (신디사이저)", "Ukulele (우쿨렐레)", "Violin (바이올린)" ],
+             moods: [ "Aggressive (공격적인)", "Bright (밝은)", "Calm (차분한)", "Chill (느긋한)", "Dark (어두운)", "Dramatic (극적인)", "Dreamy (몽환적인)", "Eerie (으스스한)", "Energetic (활기찬)", "Epic (웅장한)", "Exciting (신나는)", "Groovy (흥겨운)", "Happy (행복한)", "Hopeful (희망찬)", "Intense (강렬한)", "Lonely (외로운)", "Majestic (장엄한)", "Melancholic (우울한)", "Mysterious (신비로운)", "Nostalgic (향수 어린)", "Passionate (격정적인)", "Peaceful (평화로운)", "Playful (장난기 있는)", "Relaxing (편안한)", "Romantic (낭만적인)", "Sad (슬픈)", "Sentimental (감상적인)", "Serene (고요한)", "Smooth (부드러운)", "Tense (긴장감 있는)", "Uplifting (희망을 주는)", "Upbeat (업비트)" ],
+             tempos: [ "Downtempo (다운템포)", "Fast (빠르게)", "Medium (보통)", "Slow (느리게)", "Uptempo (업템포)", "Very Fast (아주 빠르게)" ],
+             eraFeatures: [ "60s (60년대)", "70s (70년대)", "80s (80년대)", "90s (90년대)", "2000s (2000년대)", "Modern (현대적)", "Ambient (앰비언트)", "Atmospheric (대기감 있는)", "Clean Production (깔끔한 프로덕션)", "Experimental (실험적인)", "Lo-fi Production (로파이 프로덕션)", "Minimal (미니멀)", "Psychedelic (사이키델릭)", "Raw Sound (거친 사운드)", "Retro (레트로)", "Vintage (빈티지)" ],
+             vocals: [ "Male Vocal (남성 보컬)", "Female Vocal (여성 보컬)", "Child Vocal (어린이 보컬)", "Harmony Vocals (하모니 보컬)", "Chorus (코러스 (합창))", "Rap (랩)", "Whispering Vocal (속삭이는 보컬)", "Narration (나레이션)" ],
+             vocalAges: ["10s (10대)", "20s (20대)", "30s (30대)", "40s (40대)", "50s (50대)", "60s+ (60대 이상)"],
+             vocalTones: [
+                "Airy (공기감 있는)", "Angelic (천사 같은)", "Breathy (숨소리 섞인)", "Bright (밝은 톤)",
+                "Clear Diction (정확한 발음)", // Added
+                "Clear (명료한)", "Commanding (단호한)", "Crisp (청량한)", "Deep (깊은 톤)",
+                "Delicate (섬세한)", "Edgy (날카로운)", "Ethereal (천상의)", "Gentle (부드러운)",
+                "Gravelly (자갈 같은)", "Gritty (거친 느낌)", "Growling (으르렁거리는)", "Harsh (거친)",
+                "Haunting (잊혀지지 않는)", "Heartfelt (진심 어린)", // Added
+                "Hoarse (쉰)", "Husky (허스키한)", "Melancholic Tone (우울한 톤)",
+                "Melodious (듣기 좋은)", "Monotone (단조로운)", "Muffled (먹먹한)", "Nasal (비음 섞인)",
+                "Operatic (오페라틱)", "Piercing (꿰뚫는 듯한)", "Powerful (힘 있는)", "Raspy (쉰 목소리)",
+                "Resonant (울림 있는)", "Rich (풍부한)", "Robotic (로봇 같은)", "Rough (거친 톤)",
+                "Seductive Tone (유혹적인 톤)", "Sharp (날카로운 톤)", "Silky (비단결 같은)", "Smoky (연기 같은)",
+                "Smooth Tone (부드러운 톤)", "Soft (부드러운 톤)", "Soulful (소울풀한)", "Strained (긴장된)",
+                "Strong (강한 톤)", "Sweet Tone (달콤한 톤)", "Thin (얇은 톤)", "Trembling (떨리는)",
+                "Velvety (벨벳 같은)", "Vulnerable Tone (취약한 톤)", "Warm (따뜻한)"
+            ]
+        };
+
+        let appState = {
+            unifiedMoodSelection: [], unifiedMoodInput: '',
+            lyrics: { theme: null, storyPersonaInput: '', imageryInput: '', messageInput: '', tone: [], selectedSongForm: [] },
+            style: { genres: [], timeSignature: null, instruments: [], tempo: null, bpm: null, eraFeatures: [], vocals: [], vocalAge: null, vocalTones: [], artist: '', negativePrompts: '', bpmInputValue: '', artistInputValue: '', negativePromptsValue: ''}
+        };
+        let history = [];
+        let isProcessingUndo = false;
+        const unifiedMoodCategory = 'unifiedMood';
+
+        const domRefs = {
+            undoButton: document.getElementById('undo-button'), resetButton: document.getElementById('reset-button'), homeButton: document.getElementById('home-button'),
+            savePresetButton: document.getElementById('save-preset-button'), presetNameInput: document.getElementById('preset-name-input'),
+            loadPresetFileButton: document.getElementById('load-preset-file-button'), loadPresetFileInput: document.getElementById('load-preset-file-input'),
+
+            lyricsMainThemeGroup: document.getElementById('lyrics-main-theme-group'),
+            unifiedMoodOptionsContainer: document.getElementById('unified-mood-options'), unifiedMoodInputArea: document.getElementById('unified-mood-input'),
+            lyricsStoryPersonaInput: document.getElementById('lyrics-story-persona-input'), lyricsImageryInput: document.getElementById('lyrics-imagery-input'),
+            lyricsMessageInput: document.getElementById('lyrics-message-input'), lyricsToneOptions: document.getElementById('lyrics-tone-options'),
+            lyricsSongformElementsContainer: document.getElementById('lyrics-songform-elements'), lyricsSelectedSongformContainer: document.getElementById('lyrics-selected-songform-container'),
+
+            styleGenreOptions: document.getElementById('style-genre-options'), styleTimeSignatureOptions: document.getElementById('style-time-signature-options'),
+            styleTempoButtonsGroup: document.getElementById('style-tempo-buttons-group'), styleBpmInput: document.getElementById('style-bpm-input'),
+            styleEraOptionsEra: document.getElementById('style-era-options-era'), styleEraOptionsFeatures: document.getElementById('style-era-options-features'),
+            styleInstrumentOptions: document.getElementById('style-instrument-options'),
+            styleVocalOptions: document.getElementById('style-vocal-options'), styleVocalAgeOptions: document.getElementById('style-vocal-age-options'),
+            styleToneOptions: document.getElementById('style-tone-options'), styleArtistInput: document.getElementById('style-artist-input'),
+            styleNegativePromptsInput: document.getElementById('style-negative-prompts-input'),
+
+            lyricsPromptOutput: document.getElementById('lyrics-prompt-output'), stylePromptOutput: document.getElementById('style-prompt-output'),
+            copyLyricsButton: document.getElementById('copy-lyrics-button'), copyStyleButton: document.getElementById('copy-style-button'),
+            saveLyricsButton: document.getElementById('save-lyrics-button'), saveStyleButton: document.getElementById('save-style-button')
+        };
+
+        function getEnglishPart(text) { if (typeof text !== 'string') return ''; const match = text.match(/^(.*?)\s*\(/); if (match) { return match[1].trim(); } else { return text.trim(); } }
+        function getKoreanPart(text) { if (typeof text !== 'string') return ''; const match = text.match(/\((.*?)\)/); return match ? match[1].trim() : ''; }
+        function sortByEnglish(a, b) { const ea = getEnglishPart(a).toLowerCase(); const eb = getEnglishPart(b).toLowerCase(); return ea.localeCompare(eb); }
+        function sortByKorean(a, b) { const ka = getKoreanPart(a); const kb = getKoreanPart(b); return ka.localeCompare(kb, 'ko'); }
+        function deepClone(obj) { try { return JSON.parse(JSON.stringify(obj)); } catch (e) { console.error("Deep clone failed, using structuredClone fallback or returning null:", e); if (typeof structuredClone === 'function') return structuredClone(obj); return null; } }
+
+        function getCurrentAppStateForSave() {
+            let currentState = deepClone(appState); if (!currentState) return null;
+            currentState.unifiedMoodInput = domRefs.unifiedMoodInputArea ? domRefs.unifiedMoodInputArea.value.trim() : '';
+            currentState.lyrics.storyPersonaInput = domRefs.lyricsStoryPersonaInput ? domRefs.lyricsStoryPersonaInput.value.trim() : '';
+            currentState.lyrics.imageryInput = domRefs.lyricsImageryInput ? domRefs.lyricsImageryInput.value.trim() : '';
+            currentState.lyrics.messageInput = domRefs.lyricsMessageInput ? domRefs.lyricsMessageInput.value.trim() : '';
+            currentState.style.artistInputValue = domRefs.styleArtistInput ? domRefs.styleArtistInput.value.trim() : '';
+            currentState.style.negativePromptsValue = domRefs.styleNegativePromptsInput ? domRefs.styleNegativePromptsInput.value.trim() : '';
+            currentState.style.bpmInputValue = domRefs.styleBpmInput ? domRefs.styleBpmInput.value : '';
+
+            currentState.style.artist = currentState.style.artistInputValue;
+            currentState.style.negativePrompts = currentState.style.negativePromptsValue;
+            currentState.style.bpm = currentState.style.bpmInputValue ? parseInt(currentState.style.bpmInputValue, 10) : null;
+            if (isNaN(currentState.style.bpm)) currentState.style.bpm = null;
+
+            return currentState;
+        }
+
+        function saveState(actionSource = "unknown") {
+             if (isProcessingUndo) return; const currentState = getCurrentAppStateForSave(); if (!currentState) return; currentState.actionSource = actionSource;
+             if (history.length > 0) { const lastState = { ...history[history.length - 1] }; const currentStateForCompare = { ...currentState }; delete lastState.actionSource; delete currentStateForCompare.actionSource; if (JSON.stringify(currentStateForCompare) === JSON.stringify(lastState)) { return; } }
+            history.push(currentState); if (history.length > 25) { history.shift(); } if (domRefs.undoButton) domRefs.undoButton.disabled = history.length <= 1;
+        }
+
+        function createButton(text, appStatePath, category, value = text, isMultiSelect = false) {
+            const button = document.createElement('button');
+            button.textContent = text;
+            button.dataset.appstatePath = appStatePath;
+            button.dataset.category = category;
+            button.dataset.value = value;
+            button.dataset.isMultiSelect = String(isMultiSelect);
+
+            if (category === 'songFormElement') {
+                button.dataset.element = value;
+                button.addEventListener('click', handleLyricsSongFormElementClick);
+            } else {
+                button.addEventListener('click', handleOptionClick);
+            }
+            return button;
+        }
+
+        function handleOptionClick(event) {
+            if (isProcessingUndo) return;
+            const button = event.target;
+            const appStatePath = button.dataset.appstatePath;
+            const value = button.dataset.value;
+            const isMultiSelect = button.dataset.isMultiSelect === 'true';
+            let stateChanged = false;
+
+            let targetStatePart;
+            let actualCategory;
+
+            if (appStatePath === 'unified.moodSelection') {
+                targetStatePart = appState;
+                actualCategory = 'unifiedMoodSelection';
+            } else {
+                const pathParts = appStatePath.split('.');
+                targetStatePart = appState[pathParts[0]];
+                actualCategory = pathParts[1];
+            }
+
+            if (!targetStatePart || !targetStatePart.hasOwnProperty(actualCategory)) {
+                if (appStatePath === 'unified.moodSelection' && actualCategory === 'unifiedMoodSelection') {
+                } else {
+                    console.warn("Target state part or category not found for path:", appStatePath);
+                    return;
+                }
+            }
+
+            const selectionArray = targetStatePart[actualCategory];
+
+            if (isMultiSelect) {
+                if (!Array.isArray(selectionArray)) {
+                    targetStatePart[actualCategory] = [];
+                }
+                const currentSelection = targetStatePart[actualCategory];
+                const wasSelected = button.classList.contains('selected');
+                button.classList.toggle('selected');
+                if (!wasSelected) {
+                    if (!currentSelection.includes(value)) { currentSelection.push(value); stateChanged = true; }
+                } else {
+                    const index = currentSelection.indexOf(value);
+                    if (index > -1) { currentSelection.splice(index, 1); stateChanged = true; }
+                }
+            } else {
+                const container = button.closest('.options-group, .input-container');
+                const alreadySelected = button.classList.contains('selected');
+
+                if (container) {
+                    container.querySelectorAll(`button[data-appstate-path="${appStatePath}"].selected`).forEach(sibling => {
+                        if (sibling !== button) sibling.classList.remove('selected');
+                    });
+                }
+
+                if (alreadySelected) {
+                    button.classList.remove('selected');
+                    if (targetStatePart[actualCategory] !== null) {
+                        targetStatePart[actualCategory] = null; stateChanged = true;
+                        if (appStatePath === 'style.tempo') {
+                            appState.style.bpm = null; if (domRefs.styleBpmInput) domRefs.styleBpmInput.value = ''; appState.style.bpmInputValue = '';
+                        }
+                    }
+                } else {
+                    button.classList.add('selected');
+                    if (targetStatePart[actualCategory] !== value) {
+                        targetStatePart[actualCategory] = value; stateChanged = true;
+                        if (appStatePath === 'style.tempo') {
+                            appState.style.bpm = null; if (domRefs.styleBpmInput) domRefs.styleBpmInput.value = ''; appState.style.bpmInputValue = '';
+                        }
+                    }
+                }
+            }
+
+            if (stateChanged) {
+                updateAllPrompts();
+                saveState(`click-${appStatePath}-${getEnglishPart(value) || value}`);
+            }
+        }
+
+        function handleLyricsSongFormElementClick(event) {
+             if (isProcessingUndo) return; const element = event.target.dataset.element; if (element) { if (!Array.isArray(appState.lyrics.selectedSongForm)) appState.lyrics.selectedSongForm = []; appState.lyrics.selectedSongForm.push(element); renderLyricsSelectedSongform(); generateLyricsPrompt(); saveState(`addSF-${element}`); }
+        }
+
+        function handleTextInputChange(event) {
+            if (isProcessingUndo) return;
+            const inputElement = event.target;
+            const value = inputElement.value;
+            const id = inputElement.id;
+            let stateChanged = false;
+
+            if (id === 'unified-mood-input') {
+                if (appState.unifiedMoodInput !== value.trim()) { appState.unifiedMoodInput = value.trim(); stateChanged = true; }
+            } else if (id === 'lyrics-story-persona-input') {
+                if (appState.lyrics.storyPersonaInput !== value.trim()) { appState.lyrics.storyPersonaInput = value.trim(); stateChanged = true; }
+            } else if (id === 'lyrics-imagery-input') {
+                if (appState.lyrics.imageryInput !== value.trim()) { appState.lyrics.imageryInput = value.trim(); stateChanged = true; }
+            } else if (id === 'lyrics-message-input') {
+                if (appState.lyrics.messageInput !== value.trim()) { appState.lyrics.messageInput = value.trim(); stateChanged = true; }
+            } else if (id === 'style-artist-input') {
+                if (appState.style.artistInputValue !== value) { appState.style.artistInputValue = value; appState.style.artist = value.trim(); stateChanged = true;}
+            } else if (id === 'style-negative-prompts-input') {
+                if (appState.style.negativePromptsValue !== value) { appState.style.negativePromptsValue = value; appState.style.negativePrompts = value.trim(); stateChanged = true;}
+            }
+
+            if (stateChanged) {
+                updateAllPrompts();
+                if (event.type === 'change') {
+                    saveState(`text-${id}`);
+                }
+            }
+        }
+        function handleStyleBpmInput(event) {
+             if (isProcessingUndo) return; const inputElement = event.target; const rawValue = inputElement.value; const numericValue = rawValue ? parseInt(rawValue, 10) : null; let stateChanged = false; appState.style.bpmInputValue = rawValue;
+            if (numericValue !== null && !isNaN(numericValue)) { if (appState.style.bpm !== numericValue) { appState.style.bpm = numericValue; stateChanged = true; if (appState.style.tempo !== null) { appState.style.tempo = null; if (domRefs.styleTempoButtonsGroup) { domRefs.styleTempoButtonsGroup.querySelectorAll('button.selected').forEach(b => b.classList.remove('selected')); } } } }
+            else { if (appState.style.bpm !== null) { appState.style.bpm = null; stateChanged = true; } }
+            if (stateChanged) { updateAllPrompts(); if (event.type === 'change') { saveState('style-bpm-input'); } }
+        }
+        function renderLyricsSelectedSongform() {
+             if (!domRefs.lyricsSelectedSongformContainer) return; domRefs.lyricsSelectedSongformContainer.innerHTML = ''; const formElements = appState.lyrics.selectedSongForm;
+            if (!formElements || formElements.length === 0) { domRefs.lyricsSelectedSongformContainer.innerHTML = `<span class="placeholder-text">Click elements above to build form...</span>`; return; }
+             formElements.forEach(element => { if (element && element.startsWith('[') && element.endsWith(']')) { const tagSpan = document.createElement('span'); tagSpan.classList.add('sequence-tag', 'songform-tag'); tagSpan.textContent = element; domRefs.lyricsSelectedSongformContainer.appendChild(tagSpan); } });
+        }
+
+        function generateLyricsPrompt() {
+            const { lyrics, style } = appState;
+            const { unifiedMoodSelection, unifiedMoodInput } = appState;
+            let prompt = "";
+            let hasContent = false;
+
+            let role = "당신은 다재다능한 음악 프롬프트 작가 겸 작사가입니다.";
+            if (lyrics.theme === '광고') role = "당신은 창의적인 광고 CM송 전문가입니다.";
+            else if (lyrics.theme === '찬양') role = "당신은 은혜로운 CCM 전문가입니다.";
+            else if (style.genres && style.genres.length > 0) {
+                const firstGenreEng = getEnglishPart(style.genres[0]).toLowerCase();
+                if (firstGenreEng.includes('hiphop') || firstGenreEng.includes('rap') || firstGenreEng.includes('trap')) role = "당신은 감각적인 힙합 음악 프로듀서 겸 작사가입니다.";
+                else if (firstGenreEng.includes('rock')) role = "당렬하거나 서정적인 록 음악 작곡가 겸 작사가입니다.";
+                else if (firstGenreEng.includes('ballad')) role = "당신은 섬세한 K-Pop/발라드 전문 작곡가 겸 작사가입니다.";
+                else if (firstGenreEng.includes('pop')) role = "당신은 대중적인 팝 음악 프로듀서 겸 작사가입니다.";
+            }
+            if (lyrics.storyPersonaInput && lyrics.storyPersonaInput.length > 10) {
+                role += " (주어진 스토리와 인물에 깊이 몰입하여)";
+            }
+            prompt += `${role}\n\n`;
+
+            prompt += "## AI 참고 정보 (통합)\n";
+            prompt += "- **작업 목표**: 아래 제공된 모든 정보를 종합 분석하여, (1)완성도 높은 곡의 가사(한국어)와 (2)음악 스타일에 대한 설명을 생성합니다.\n";
+            prompt += "- **통합 분위기/감성**: 선택된 '무드/바이브', '테마', '스토리', '음악 스타일' 등 모든 요소에서 나타나는 분위기와 감성을 일관되게 유지하거나, 의도된 경우 자연스럽게 조화시키는 것을 목표로 합니다.\n";
+            prompt += "- **태그 형식**: 가사 내 구조 태그(`[Verse]`) 및 지시 태그(예: `[Guitar solo]`)는 반드시 **영문**으로 대괄호 `[]` 안에 작성합니다.\n\n";
+
+            let referenceInfo = "";
+
+            referenceInfo += "### 가사 관련 핵심 내용\n";
+            let lyricalContentAdded = false;
+            if (lyrics.theme) { referenceInfo += `- 주요 테마: ${lyrics.theme}\n`; lyricalContentAdded = true; }
+            if (unifiedMoodSelection.length > 0) { referenceInfo += `- 선택된 분위기 키워드: ${unifiedMoodSelection.join(', ')}\n`; lyricalContentAdded = true;}
+            if (unifiedMoodInput) { referenceInfo += `- 분위기 상세 묘사: ${unifiedMoodInput}\n`; lyricalContentAdded = true;}
+            if (lyrics.storyPersonaInput) { referenceInfo += `- 이야기/상황/화자: ${lyrics.storyPersonaInput}\n`; lyricalContentAdded = true;}
+            if (lyrics.imageryInput) { referenceInfo += `- 주요 이미지/키워드: ${lyrics.imageryInput}\n`; lyricalContentAdded = true;}
+            if (lyrics.messageInput) { referenceInfo += `- 전달 메시지/대상: ${lyrics.messageInput}\n`; lyricalContentAdded = true;}
+            if (lyrics.tone && lyrics.tone.length > 0) { referenceInfo += `- 언어적 톤: ${lyrics.tone.map(t => getKoreanPart(t) || t).join(', ')}\n`; lyricalContentAdded = true;}
+            if (lyrics.selectedSongForm && lyrics.selectedSongForm.length > 0) { referenceInfo += `- 요청된 송폼 구조: ${lyrics.selectedSongForm.join(' -> ')}\n`; lyricalContentAdded = true;}
+            if (!lyricalContentAdded) referenceInfo += "- (선택된 가사 관련 핵심 내용 없음)\n";
+            referenceInfo += "\n";
+            hasContent = hasContent || lyricalContentAdded;
+
+            referenceInfo += "### 음악 스타일 관련 특징\n";
+            let musicalContentAdded = false;
+            if (style.genres && style.genres.length > 0) { referenceInfo += `- 장르: ${style.genres.map(g => getEnglishPart(g) || g).join(', ')}\n`; musicalContentAdded = true;}
+            if (style.timeSignature) { referenceInfo += `- 박자: ${getEnglishPart(style.timeSignature) || style.timeSignature}\n`; musicalContentAdded = true;}
+            if (style.tempo) { referenceInfo += `- 템포: ${getEnglishPart(style.tempo)}\n`; musicalContentAdded = true;}
+            if (style.bpm) { referenceInfo += `- BPM: ${style.bpm}\n`; musicalContentAdded = true;}
+            if (style.eraFeatures && style.eraFeatures.length > 0) { referenceInfo += `- 시대/사운드 특징: ${style.eraFeatures.map(e => getEnglishPart(e) || e).join(', ')}\n`; musicalContentAdded = true;}
+            if (style.instruments && style.instruments.length > 0) { referenceInfo += `- 주요 악기: ${style.instruments.map(i => getEnglishPart(i) || i).join(', ')}\n`; musicalContentAdded = true;}
+
+            let vocalDetails = [];
+            const getEnglishArray = (arr) => arr.map(item => getEnglishPart(item)).filter(part => part);
+            if (style.vocals && style.vocals.length > 0) {
+                vocalDetails = vocalDetails.concat(getEnglishArray(style.vocals));
+            }
+            if (style.vocalAge) {
+                const agePart = getEnglishPart(style.vocalAge) || style.vocalAge;
+                const ageText = `${agePart} age`;
+                let mainVocalIdx = vocalDetails.findIndex(v => v.toLowerCase().includes("male vocal") || v.toLowerCase().includes("female vocal") || v.toLowerCase().includes("child vocal"));
+                if (mainVocalIdx !== -1 && vocalDetails[mainVocalIdx]) {
+                     vocalDetails[mainVocalIdx] += ` (${ageText})`;
+                } else {
+                    if (!vocalDetails.some(el => el.includes(agePart))) {
+                        vocalDetails.push(`${ageText} vocal`);
+                    }
+                }
+            }
+            if (style.vocalTones && style.vocalTones.length > 0) {
+                getEnglishArray(style.vocalTones).forEach(tone => {
+                    vocalDetails.push(`${tone} vocal tone`);
+                });
+            }
+            if (vocalDetails.length > 0) { referenceInfo += `- 보컬 특징: ${[...new Set(vocalDetails)].join(', ')}\n`; musicalContentAdded = true;}
+
+            if (style.artist) { referenceInfo += `- 아티스트 스타일 참고: ${style.artist}\n`; musicalContentAdded = true;}
+            if (style.negativePrompts) { referenceInfo += `- 제외할 요소: ${style.negativePrompts}\n`; musicalContentAdded = true;}
+            if (!musicalContentAdded) referenceInfo += "- (선택된 음악 스타일 관련 특징 없음)\n";
+            hasContent = hasContent || musicalContentAdded;
+
+            prompt += referenceInfo;
+
+            let metaContent = [];
+            const themeMap = { '일상': 'Daily Life', '사랑': 'Love', '꿈': 'Dream', '사회': 'Social', '자연': 'Nature', '감사': 'Gratitude', '행복': 'Happiness', '가족': 'Family', '광고': 'Commercial Song', '찬양': 'CCM / Gospel' };
+            let genreTagEng = "Music";
+            if (style.genres && style.genres.length > 0) { genreTagEng = getEnglishPart(style.genres[0]) || "Music"; genreTagEng = genreTagEng.charAt(0).toUpperCase() + genreTagEng.slice(1); }
+            else if (lyrics.theme && themeMap[lyrics.theme]) { genreTagEng = themeMap[lyrics.theme]; }
+            metaContent.push(`Genre: ${genreTagEng}`);
+
+            if (style.timeSignature) { metaContent.push(`Beat: ${getEnglishPart(style.timeSignature) || style.timeSignature}`); }
+            if (style.tempo) { metaContent.push(`Tempo: ${getEnglishPart(style.tempo)}`); }
+            else if (style.bpm) { metaContent.push(`Tempo: ${style.bpm} BPM`); }
+
+            let moodKeywordsForMeta = [];
+            if (unifiedMoodSelection.length > 0) { moodKeywordsForMeta = moodKeywordsForMeta.concat(unifiedMoodSelection.map(m => getEnglishPart(m) || m)); }
+            if (unifiedMoodInput) { unifiedMoodInput.split(/[,、\s]+/).map(k => k.trim()).filter(Boolean).forEach(k => { const engPart = getEnglishPart(k); if (engPart && /^[a-zA-Z0-9\s-]+$/.test(engPart)) moodKeywordsForMeta.push(engPart); });}
+            if (lyrics.theme && themeMap[lyrics.theme] && !moodKeywordsForMeta.includes(themeMap[lyrics.theme])) { moodKeywordsForMeta.push(themeMap[lyrics.theme]); }
+            const finalMoodKeywords = [...new Set(moodKeywordsForMeta)].map(k => k.replace(/[\(\)\[\]]/g, '').trim()).filter(k => k && k.length > 1).slice(0, 5);
+            if (finalMoodKeywords.length > 0) { metaContent.push(`Mood: ${finalMoodKeywords.join(', ')}`); } else { metaContent.push(`Mood: Evocative`); }
+
+            prompt += `\n[Metadata: ${metaContent.join(', ')}]\n\n`;
+
+            prompt += "## 가사 생성 지침 (한국어)\n";
+            prompt += "1. AI 역할 수행: 제시된 '역할'과 모든 'AI 참고 정보'에 완전히 몰입하여 작업합니다.\n";
+            prompt += "2. 정보 종합 및 분석: ‘주제’, '가사 관련 핵심 내용'과 '음악 스타일 관련 특징' 모두를 유기적으로 연결하고 종합 분석하여 가사 내용, 표현, 음절, 글자 수를 잘 고려해서 AABB의 운율로가사를 생성합니다. 읽기 쉽고 발음하기 편하게 말 하는 듯한 가사로 만듭니다. 표현된 가사들의 스토리와 감정의 표현은 전체적인 가사 내용의 맥락과 표현 방식 및 분위기를 아주 적절하게 반영합니다.\n"; // Updated #2
+            prompt += "3. 가사의 문장은 억지 스럽지 않고 전후 상황과 주제 및 소 주제의 맥락이 이야기 하 듯 자연스럽게 연결 되도록 합니다.\n"; // Kept as #3
+            prompt += "4. 창의적 가사: 2020년 이후 한국 문학의 특징(섬세한 내면 묘사, 중의적 표현, 도시적 감수성 등)을 가미하여 창의적이고 깊이 있는 가사를 작성합니다.\n"; // Updated #4 (was old #3, changed year)
+            prompt += "5. 구조 및 형식: 요청된 '송폼 구조'가 있다면 따르고, 없다면 일반적인 대중음악 구조를 따릅니다. 모든 비-가사 지시사항은 반드시 대괄호 [ ] 안에 영문으로 작성합니다.\n"; // Kept as #5
+            prompt += "6. [Intro] 와 [Outro] 에는 특별한 경우를 제외하고 가급적 가사를 만들지 않습니다. 가사는 꼭 필요한 경우를 제외하고 가급적 4 줄 단위로 작성합니다.\n"; // Kept as #6
+            prompt += "7. 표현 및 완성도: 상투적인 표현과 진부함을 피하고, 선택된 '언어적 톤'과 '분위기'를 반영한 참신한 표현을 사용합니다. 메시지가 명확하면서도 예술적으로 전달되도록 합니다.\n"; // Kept as #7
+            prompt += "8. 음악성 고려: '음악 스타일 관련 특징' (장르, 박자, 템포 등)을 참고하여 음절 수와 글자 수를 자연스럽게 조절합니다.\n"; // Kept as #8
+            prompt += "9. 라임 : 필요한 경우 내용적인 라임, 발음 상의 라임, 단어 상의 라임을 맞춰 주세요.\n"; // Kept as #9
+
+
+            if (!hasContent && !unifiedMoodSelection.length && !unifiedMoodInput) {
+                prompt = "[프롬프트 생성기] 가사 및 스타일 프롬프트를 생성하려면 다양한 옵션을 선택하거나 입력해주세요.";
+            }
+            if (domRefs.lyricsPromptOutput) domRefs.lyricsPromptOutput.textContent = prompt;
+        }
+
+        function generateStylePrompt() {
+            const { lyrics, style } = appState;
+            const { unifiedMoodSelection, unifiedMoodInput } = appState;
+            let promptParts = [];
+            const getEnglishArray = (arr) => arr.map(item => getEnglishPart(item)).filter(part => part);
+
+            // 1. Genre (Moved to the front as per user request)
+            if (style.genres.length > 0) {
+                promptParts = promptParts.concat(getEnglishArray(style.genres));
+            }
+
+            // 2. Unified Mood (Keywords and detailed input)
+            if (unifiedMoodSelection.length > 0) { promptParts = promptParts.concat(getEnglishArray(unifiedMoodSelection)); }
+            if (unifiedMoodInput) {
+                const moodInputKeywords = unifiedMoodInput.toLowerCase().split(/[\s,.\-_()]+/).filter(w => w.length > 2 && /^[a-z]+$/.test(w));
+                const commonMoodWords = styleData.moods.map(m => getEnglishPart(m).toLowerCase());
+                moodInputKeywords.forEach(kw => {
+                    if (commonMoodWords.includes(kw) && !promptParts.some(p => p.toLowerCase() === kw)) { // Check against existing parts (lowercase)
+                         promptParts.push(kw.charAt(0).toUpperCase() + kw.slice(1));
+                    }
+                });
+            }
+
+            // 3. Era & Sound Features
+            if (style.eraFeatures.length > 0) { promptParts = promptParts.concat(getEnglishArray(style.eraFeatures)); }
+
+            // 4. Time Signature
+            if (style.timeSignature) { const extractedPart = getEnglishPart(style.timeSignature); if (extractedPart.includes('/')) { promptParts.push(`${extractedPart} time signature`); } else { promptParts.push(extractedPart); } }
+
+            // 5. Artist Style
+            if (style.artist && style.artist.trim() !== '') { promptParts.push(`in the style of ${style.artist.trim()}`); }
+
+            // 6. Instruments
+            if (style.instruments.length > 0) { promptParts.push(`with ${getEnglishArray(style.instruments).join(', ')}`); }
+
+            // 7. Vocal Characteristics (Type, Vocal Age, Tones - with specific age formatting)
+            let vocalPromptElements = [];
+            if (style.vocals && style.vocals.length > 0) {
+                vocalPromptElements = vocalPromptElements.concat(getEnglishArray(style.vocals));
+            }
+
+            if (style.vocalAge) {
+                const agePart = getEnglishPart(style.vocalAge) || style.vocalAge;
+                const ageText = `${agePart} age`;
+
+                let mainVocalIdx = vocalPromptElements.findIndex(v => v.toLowerCase().includes("male vocal") || v.toLowerCase().includes("female vocal") || v.toLowerCase().includes("child vocal"));
+                if (mainVocalIdx !== -1 && vocalPromptElements[mainVocalIdx]) {
+                    vocalPromptElements[mainVocalIdx] += ` (${ageText})`;
+                } else {
+                    if (!vocalPromptElements.some(el => el.includes(agePart))) {
+                         vocalPromptElements.push(`${ageText} vocal`);
+                    }
+                }
+            }
+            if (style.vocalTones.length > 0) {
+                getEnglishArray(style.vocalTones).forEach(tone => {
+                    vocalPromptElements.push(`${tone} vocal tone`);
+                });
+            }
+            if (vocalPromptElements.length > 0) { promptParts.push([...new Set(vocalPromptElements)].join(', ')); }
+
+
+            // 8. Tempo / BPM
+            if (style.tempo) { promptParts.push(getEnglishPart(style.tempo)); }
+            else if (style.bpm) { promptParts.push(`${style.bpm} BPM`); }
+
+            // 9. Selective elements from Lyrics Tone (Theme is excluded as per user request)
+            // const themeToStyleKeyword = { "사랑": "Romantic", "꿈": "Dreamy", "행복": "Happy", "찬양": "Gospel", "광고": "Commercial" };
+            // if (lyrics.theme && themeToStyleKeyword[lyrics.theme]) {
+            //     if (!promptParts.some(p => p.toLowerCase().includes(themeToStyleKeyword[lyrics.toLowerCase()].toLowerCase()))) { // Fixed lowercase comparison
+            //         promptParts.push(themeToStyleKeyword[lyrics.theme]);
+            //     }
+            // }
+
+            const toneToStyleKeyword = { "Passionate (열정적)": "Passionate", "Energetic (활기찬)": "Energetic", "Humorous (유머러스)": "Playful", "Warm (따뜻한)": "Warm" };
+            if (lyrics.tone && lyrics.tone.length > 0) {
+                lyrics.tone.forEach(t => {
+                    if (toneToStyleKeyword[t] && !promptParts.some(p => p.toLowerCase().includes(toneToStyleKeyword[t].toLowerCase()))) {
+                        promptParts.push(toneToStyleKeyword[t]);
+                    }
+                });
+            }
+
+            // 10. Exclusions
+            if (style.negativePrompts && style.negativePrompts.trim() !== '') {
+                const excludedItems = style.negativePrompts.split(',').map(s => s.trim()).filter(Boolean).map(s => getEnglishPart(s) || s).filter(Boolean);
+                if (excludedItems.length > 0) { promptParts.push(`excluding ${excludedItems.join(', ')}`); }
+            }
+
+            promptParts = [...new Set(promptParts.map(p => p.trim()).filter(p => p))];
+            let finalPrompt = promptParts.join(', ');
+
+            if (!finalPrompt && !(lyrics.storyPersonaInput || lyrics.imageryInput || lyrics.messageInput)) {
+                 finalPrompt = "Select options to generate prompts...";
+            } else if (!finalPrompt) {
+                 finalPrompt = "Music style based on lyrical content (describe if needed)";
+            }
+
+            if (domRefs.stylePromptOutput) domRefs.stylePromptOutput.textContent = finalPrompt;
+         }
+
+        function updateAllPrompts() {
+            generateLyricsPrompt();
+            generateStylePrompt();
+        }
+
+        function updateUIFromState(stateToRestore) {
+             isProcessingUndo = true;
+             try {
+                const clonedState = deepClone(stateToRestore);
+                if (!clonedState) { console.error("Failed to clone state for restoration."); isProcessingUndo = false; return; }
+
+                clonedState.lyrics = clonedState.lyrics || {};
+                clonedState.style = clonedState.style || {};
+                clonedState.unifiedMoodSelection = clonedState.unifiedMoodSelection || [];
+                ['theme', 'storyPersonaInput', 'imageryInput', 'messageInput'].forEach(k => clonedState.lyrics[k] = clonedState.lyrics[k] ?? (k.includes('Input') ? '' : null) );
+                clonedState.lyrics.tone = clonedState.lyrics.tone || [];
+                clonedState.lyrics.selectedSongForm = clonedState.lyrics.selectedSongForm || [];
+
+                ['genres', 'instruments', 'eraFeatures', 'vocals', 'vocalTones'].forEach(k => clonedState.style[k] = clonedState.style[k] || []);
+                ['timeSignature', 'tempo', 'bpm', 'vocalAge', 'artist', 'negativePrompts', 'bpmInputValue', 'artistInputValue', 'negativePromptsValue'].forEach(k => clonedState.style[k] = clonedState.style[k] ?? (k.includes('Input') || k.includes('Value') ? '' : null) );
+
+
+                appState = clonedState;
+
+                if (domRefs.unifiedMoodOptionsContainer) {
+                    domRefs.unifiedMoodOptionsContainer.querySelectorAll('button.selected').forEach(b => b.classList.remove('selected'));
+                    appState.unifiedMoodSelection.forEach(value => {
+                        try { const button = domRefs.unifiedMoodOptionsContainer.querySelector(`button[data-value="${CSS.escape(value)}"]`); if (button) button.classList.add('selected'); } catch (e) {}
+                    });
+                }
+                if (domRefs.unifiedMoodInputArea) domRefs.unifiedMoodInputArea.value = appState.unifiedMoodInput || '';
+
+                if (domRefs.lyricsStoryPersonaInput) domRefs.lyricsStoryPersonaInput.value = appState.lyrics.storyPersonaInput || '';
+                if (domRefs.lyricsImageryInput) domRefs.lyricsImageryInput.value = appState.lyrics.imageryInput || '';
+                if (domRefs.lyricsMessageInput) domRefs.lyricsMessageInput.value = appState.lyrics.messageInput || '';
+                if (domRefs.styleArtistInput) domRefs.styleArtistInput.value = appState.style.artistInputValue ?? appState.style.artist ?? '';
+                if (domRefs.styleNegativePromptsInput) domRefs.styleNegativePromptsInput.value = appState.style.negativePromptsValue ?? appState.style.negativePrompts ?? '';
+                if (domRefs.styleBpmInput) domRefs.styleBpmInput.value = appState.style.bpmInputValue ?? (appState.style.bpm !== null && !isNaN(appState.style.bpm) ? String(appState.style.bpm) : '');
+
+                document.querySelectorAll('.options-column button.selected').forEach(b => b.classList.remove('selected'));
+
+                const sectionsToUpdate = {
+                    'lyrics.theme': domRefs.lyricsMainThemeGroup,
+                    'lyrics.tone': domRefs.lyricsToneOptions,
+                    'style.genres': domRefs.styleGenreOptions,
+                    'style.timeSignature': domRefs.styleTimeSignatureOptions,
+                    'style.tempo': domRefs.styleTempoButtonsGroup,
+                    'style.eraFeatures': [domRefs.styleEraOptionsEra, domRefs.styleEraOptionsFeatures],
+                    'style.instruments': domRefs.styleInstrumentOptions,
+                    'style.vocals': domRefs.styleVocalOptions,
+                    'style.vocalAge': domRefs.styleVocalAgeOptions,
+                    'style.vocalTones': domRefs.styleToneOptions,
+                };
+
+                for (const path in sectionsToUpdate) {
+                    const pathParts = path.split('.');
+                    const stateObject = appState[pathParts[0]];
+                    const categoryKey = pathParts[1];
+                    const valueOrValues = stateObject ? stateObject[categoryKey] : null;
+                    const containers = Array.isArray(sectionsToUpdate[path]) ? sectionsToUpdate[path] : [sectionsToUpdate[path]];
+
+                    containers.forEach(container => {
+                        if (container && valueOrValues) {
+                            if (Array.isArray(valueOrValues)) {
+                                valueOrValues.forEach(val => {
+                                    try { const button = container.querySelector(`button[data-appstate-path="${path}"][data-value="${CSS.escape(String(val))}"]`); if (button) button.classList.add('selected'); } catch (e) {}
+                                });
+                            } else {
+                                try { const button = container.querySelector(`button[data-appstate-path="${path}"][data-value="${CSS.escape(String(valueOrValues))}"]`); if (button) button.classList.add('selected'); } catch (e) {}
+                            }
+                        }
+                    });
+                }
+                renderLyricsSelectedSongform();
+                updateAllPrompts();
+             } catch (error) { console.error("Error during UI restoration:", error); }
+             finally { setTimeout(() => { isProcessingUndo = false; if (domRefs.undoButton) domRefs.undoButton.disabled = history.length <= 1; }, 50); }
+         }
+
+        function savePresetToFile() {
+            if (!domRefs.presetNameInput) return; let filename = domRefs.presetNameInput.value.trim(); if (!filename) { alert("Please enter a file name for the preset (e.g., My Ballad)."); domRefs.presetNameInput.focus(); return; } if (!filename.toLowerCase().endsWith('.json')) { filename += '.json'; } const stateToSave = getCurrentAppStateForSave(); if (!stateToSave) { alert("Failed to get current state for saving."); return; } try { const jsonString = JSON.stringify(stateToSave, null, 2); const blob = new Blob([jsonString], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); alert(`Preset saved as '${filename}'.\nPlease save it in your 'Preset' folder.`); domRefs.presetNameInput.value = ''; } catch (e) { console.error("Error creating preset file:", e); alert("An error occurred while preparing the preset file for download."); }
+        }
+        function triggerLoadPresetFromFile() {
+             if (domRefs.loadPresetFileInput) { domRefs.loadPresetFileInput.value = null; domRefs.loadPresetFileInput.click(); } else { console.error("Load preset file input element not found!"); alert("Error: Cannot find the file input element."); }
+        }
+        function handlePresetFileLoad(event) {
+            const file = event.target.files ? event.target.files[0] : null; if (!file) { return; } if (file.type && file.type !== 'application/json' && !file.name.toLowerCase().endsWith('.json')) { alert(`Invalid file type. Please select a '.json' preset file.`); return; } const reader = new FileReader(); reader.onload = function(e) { const fileContent = e.target.result; try { const loadedState = JSON.parse(fileContent); if (loadedState && typeof loadedState === 'object' && loadedState.lyrics && loadedState.style) { console.log("Loading preset from file:", file.name); saveState(`Before Load: ${file.name}`); updateUIFromState(loadedState); alert(`Preset '${file.name}' loaded successfully.`); if (domRefs.presetNameInput) domRefs.presetNameInput.value = file.name.replace(/\.json$/i, ''); } else { alert(`Error: The selected file '${file.name}' does not appear to be a valid preset file.`); } } catch (error) { console.error("Error parsing preset file:", error); alert(`Error parsing preset file '${file.name}'. Make sure it is a valid JSON file.`); } }; reader.onerror = function(e) { console.error("Error reading file:", e); alert(`Error reading file '${file.name}'.`); }; reader.readAsText(file);
+        }
+
+        function savePromptToFile(type) {
+            let elementToReadFrom; let placeholderTextFull; let suggestedFolderName;
+            if (type === 'lyrics') { elementToReadFrom = domRefs.lyricsPromptOutput; placeholderTextFull = "[프롬프트 생성기] 가사 및 스타일 프롬프트를 생성하려면 다양한 옵션을 선택하거나 입력해주세요."; suggestedFolderName = 'lyrics'; }
+            else if (type === 'style') { elementToReadFrom = domRefs.stylePromptOutput; placeholderTextFull = "Select options to generate prompts..."; suggestedFolderName = 'Music Style'; }
+            else { console.error("Invalid type for savePromptToFile:", type); return; }
+            if (!elementToReadFrom) { alert(`Error: Cannot find the ${type} prompt display.`); return; }
+            const textToSave = elementToReadFrom.textContent;
+            if (!textToSave || textToSave.trim() === '' || textToCopy === placeholderLyrics || textToCopy === placeholderStyle1 || textToCopy === placeholderStyle2 ) { alert(`Cannot save: No valid ${type} prompt generated.`); return; } // Using local placeholders
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-'); const filename = `generated_${type}_prompt_${timestamp}.txt`;
+            try { const blob = new Blob([textToSave], { type: 'text/plain;charset=utf-8' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url); alert(`'${filename}' download initiated.\nRecommended folder: '${suggestedFolderName}'.`); } catch (e) { console.error(`Error creating ${type} file:`, e); alert(`Error preparing ${type} file.`); }
+        }
+
+
+        function initialize(){
+             console.log("Initializing UI and State (v1.4.0 - Unified UI with user modifications)...");
+             try {
+                 // Ensure themes.사랑 is an array if it exists and sort if needed, or handle cases where it's not defined or not an array
+                 if (lyricsData.themes && Array.isArray(lyricsData.themes["사랑"])) {
+                     lyricsData.themes["사랑"].sort(sortByKorean);
+                 } else if (lyricsData.themes) {
+                     // If themes["사랑"] is not an array or doesn't exist, maybe initialize or handle as appropriate
+                     // For now, just log a warning or skip sorting if it's not array
+                     if (lyricsData.themes.hasOwnProperty("사랑")) {
+                         console.warn("lyricsData.themes['사랑'] is not an array. Cannot sort.");
+                     } else {
+                         console.warn("lyricsData.themes['사랑'] does not exist.");
+                     }
+                 } else {
+                     console.warn("lyricsData.themes is not defined.");
+                 }
+
+
+                 lyricsData.tones.sort(sortByKorean); styleData.moods.sort(sortByKorean); styleData.genres.sort(sortByEnglish); styleData.instruments.sort(sortByEnglish); styleData.tempos.sort(sortByEnglish);
+                 styleData.vocalTones.sort(sortByKorean); // Sort vocal tones by Korean part
+
+                if (domRefs.lyricsMainThemeGroup) Object.keys(lyricsData.themes).sort(sortByKorean).forEach(th => domRefs.lyricsMainThemeGroup.appendChild(createButton(th, 'lyrics.theme', 'theme', th, false)));
+                if (domRefs.unifiedMoodOptionsContainer) styleData.moods.forEach(item => domRefs.unifiedMoodOptionsContainer.appendChild(createButton(item, 'unified.moodSelection', unifiedMoodCategory, item, true)));
+                if (domRefs.lyricsToneOptions) lyricsData.tones.forEach(toneValue => domRefs.lyricsToneOptions.appendChild(createButton(toneValue, 'lyrics.tone', 'tone', toneValue, true)));
+                if (domRefs.lyricsSongformElementsContainer) lyricsData.songFormElements.forEach(el => domRefs.lyricsSongformElementsContainer.appendChild(createButton(el, 'lyrics.selectedSongForm', 'songFormElement', el)));
+
+                if (domRefs.styleGenreOptions) styleData.genres.forEach(item => domRefs.styleGenreOptions.appendChild(createButton(item, 'style.genres', 'genres', item, true)));
+                if (domRefs.styleTimeSignatureOptions) styleData.timeSignatures.forEach(item => domRefs.styleTimeSignatureOptions.appendChild(createButton(item, 'style.timeSignature', 'timeSignature', item, false)));
+                if (domRefs.styleInstrumentOptions) styleData.instruments.forEach(item => domRefs.styleInstrumentOptions.appendChild(createButton(item, 'style.instruments', 'instruments', item, true)));
+                if (domRefs.styleTempoButtonsGroup) styleData.tempos.forEach(item => domRefs.styleTempoButtonsGroup.appendChild(createButton(item, 'style.tempo', 'tempo', item, false)));
+
+                const eraRegex = /\d{2}s|Modern/;
+                const eras = styleData.eraFeatures.filter(item => eraRegex.test(getEnglishPart(item))).sort(sortByEnglish);
+                const features = styleData.eraFeatures.filter(item => !eraRegex.test(getEnglishPart(item))).sort(sortByEnglish);
+                if (domRefs.styleEraOptionsEra) eras.forEach(item => domRefs.styleEraOptionsEra.appendChild(createButton(item, 'style.eraFeatures', 'eraFeatures', item, true)));
+                if (domRefs.styleEraOptionsFeatures) features.forEach(item => domRefs.styleEraOptionsFeatures.appendChild(createButton(item, 'style.eraFeatures', 'eraFeatures', item, true)));
+
+                if (domRefs.styleVocalOptions) styleData.vocals.forEach(item => domRefs.styleVocalOptions.appendChild(createButton(item, 'style.vocals', 'vocals', item, true)));
+                if (domRefs.styleVocalAgeOptions) styleData.vocalAges.forEach(item => domRefs.styleVocalAgeOptions.appendChild(createButton(item, 'style.vocalAge', 'vocalAge', item, false)));
+                if (domRefs.styleToneOptions) styleData.vocalTones.forEach(item => domRefs.styleToneOptions.appendChild(createButton(item, 'style.vocalTones', 'vocalTones', item, true)));
+
+                [domRefs.unifiedMoodInputArea, domRefs.lyricsStoryPersonaInput, domRefs.lyricsImageryInput, domRefs.lyricsMessageInput, domRefs.styleArtistInput, domRefs.styleNegativePromptsInput].forEach(inputElement => {
+                    if (inputElement) {
+                        inputElement.addEventListener('input', handleTextInputChange);
+                        inputElement.addEventListener('change', handleTextInputChange);
+                    }
+                });
+                if (domRefs.styleBpmInput) {
+                    domRefs.styleBpmInput.addEventListener('input', handleStyleBpmInput);
+                    domRefs.styleBpmInput.addEventListener('change', handleStyleBpmInput);
+                }
+
+                if (domRefs.undoButton) domRefs.undoButton.addEventListener('click', () => { if (history.length > 1) { isProcessingUndo = true; history.pop(); const previousState = deepClone(history[history.length - 1]); if (previousState) { updateUIFromState(previousState); } else { isProcessingUndo = false; } } if (domRefs.undoButton) domRefs.undoButton.disabled = history.length <= 1; });
+                if (domRefs.resetButton) domRefs.resetButton.addEventListener('click', () => { if (confirm("초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) { saveState("Before Reset"); const iS = { unifiedMoodSelection: [], unifiedMoodInput: '', lyrics: { theme: null, storyPersonaInput: '', imageryInput: '', messageInput: '', tone: [], selectedSongForm: [] }, style: { genres: [], timeSignature: null, instruments: [], tempo: null, bpm: null, eraFeatures: [], vocals: [], vocalAge: null, vocalTones: [], artist: '', negativePrompts: '', bpmInputValue: '', artistInputValue: '', negativePromptsValue: ''}, actionSource: 'reset' }; history = [deepClone(iS)]; updateUIFromState(iS); if (domRefs.undoButton) domRefs.undoButton.disabled = true; alert("초기화되었습니다."); } });
+                if (domRefs.homeButton) domRefs.homeButton.addEventListener('click', () => { window.location.href = 'index.html'; }); // MODIFIED LINE
+                if (domRefs.copyLyricsButton) domRefs.copyLyricsButton.addEventListener('click', () => copyToClipboard(domRefs.lyricsPromptOutput, domRefs.copyLyricsButton, "Copy Lyrics Prompt"));
+                if (domRefs.copyStyleButton) domRefs.copyStyleButton.addEventListener('click', () => copyToClipboard(domRefs.stylePromptOutput, domRefs.copyStyleButton, "Copy Style Prompt"));
+                if (domRefs.savePresetButton) domRefs.savePresetButton.addEventListener('click', savePresetToFile);
+                if (domRefs.loadPresetFileButton) domRefs.loadPresetFileButton.addEventListener('click', triggerLoadPresetFromFile);
+                if (domRefs.loadPresetFileInput) domRefs.loadPresetFileInput.addEventListener('change', handlePresetFileLoad);
+                if (domRefs.saveLyricsButton) domRefs.saveLyricsButton.addEventListener('click', () => savePromptToFile('lyrics'));
+                if (domRefs.saveStyleButton) domRefs.saveStyleButton.addEventListener('click', () => savePromptToFile('style'));
+
+                 renderLyricsSelectedSongform();
+                 updateAllPrompts();
+                 if(domRefs.undoButton) domRefs.undoButton.disabled = true;
+                 setTimeout(() => {
+                     const initialState = getCurrentAppStateForSave();
+                     if (initialState && history.length === 0) {
+                         initialState.actionSource = "initialLoad";
+                         history = [initialState];
+                         if (domRefs.undoButton) domRefs.undoButton.disabled = true;
+                     } else if (history.length === 1 && history[0].actionSource === 'reset') {
+                         if (domRefs.undoButton) domRefs.undoButton.disabled = true;
+                     }
+                 }, 150);
+            } catch (err) { console.error("Initialization Error:", err); }
+            console.log("Initialization complete (v1.4.0 - Unified UI with user modifications).");
+        }
+
+        function copyToClipboard(elementToCopyFrom, buttonToUpdate, defaultButtonText) {
+             const textToCopy = elementToCopyFrom ? elementToCopyFrom.textContent : '';
+             const placeholderLyrics = "[프롬프트 생성기] 가사 및 스타일 프롬프트를 생성하려면 다양한 옵션을 선택하거나 입력해주세요.";
+             const placeholderStyle1 = "Select options to generate prompts...";
+             const placeholderStyle2 = "Music style based on lyrical content (describe if needed)";
+             const successText = '복사 완료!'; const nothingToCopyMsg = '복사할 내용이 없습니다.';
+             if (!textToCopy || textToCopy.trim() === '' || textToCopy === placeholderLyrics || textToCopy === placeholderStyle1 || textToCopy === placeholderStyle2 ) { alert(nothingToCopyMsg); return; }
+             if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(textToCopy).then(() => { buttonToUpdate.textContent = successText; buttonToUpdate.disabled = true; setTimeout(() => { buttonToUpdate.textContent = defaultButtonText; buttonToUpdate.disabled = false; }, 1500); }).catch(err => { console.error('Async Copy Err:', err); alert('클립보드 복사 실패.'); }); } else { try { const textArea = document.createElement("textarea"); textArea.value = textToCopy; textArea.style.position="fixed";textArea.style.opacity="0";textArea.style.left="-9999px"; document.body.appendChild(textArea); textArea.focus(); textArea.select(); const successful=document.execCommand('copy'); document.body.removeChild(textArea); if(successful){ buttonToUpdate.textContent = successText; buttonToUpdate.disabled = true; setTimeout(() => { buttonToUpdate.textContent = defaultButtonText; buttonToUpdate.disabled = false; }, 1500); } else { throw new Error('execCommand failed'); } } catch (err) { console.error('Fallback Copy Err:', err); alert('클립보드 복사 실패.'); } }
+         }
+        initialize();
+    });
+</script>
+
+</body>
+</html>
